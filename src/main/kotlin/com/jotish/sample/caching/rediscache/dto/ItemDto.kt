@@ -5,9 +5,9 @@ import java.io.Serializable
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class ItemDto(
-    var id: Int?, var name: String?, var description: String?
+    var id: Int?, var description: String?
 ) : Serializable {
-    public constructor() : this(null, null, null) {
+    constructor() : this(null, null) {
 
     }
 }

@@ -37,6 +37,7 @@ class ItemService {
     }
 
     @CacheEvict(value = ["itemCache"], key = "#id")
+    @Transactional
     fun update(id: Int, itemRequestDto: @Valid ItemRequestDto): ItemDto {
         val item: Item = itemRepository.findById(id).orElseThrow { RuntimeException() }
         itemMapper.update(item, itemRequestDto)
