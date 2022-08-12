@@ -5,6 +5,8 @@ import com.jotish.sample.caching.rediscache.dto.ItemRequestDto
 import com.jotish.sample.caching.rediscache.service.ItemService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.web.bind.annotation.*
+import javax.validation.Valid
+import javax.validation.constraints.NotEmpty
 
 @RestController
 class ItemController {
@@ -26,5 +28,10 @@ class ItemController {
     @PatchMapping("/item/{id}")
     fun patch(@PathVariable id: Int, @RequestBody itemRequest: ItemRequestDto): ItemDto {
         return itemService.update(id, itemRequest)
+    }
+
+    @GetMapping("/items")
+    fun getItemsByFilter(@Valid @NotEmpty @RequestParam ids: List<Int>): List<ItemDto> {
+        return itemService.getItems(ids)
     }
 }

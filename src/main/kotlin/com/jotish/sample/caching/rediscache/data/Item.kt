@@ -8,7 +8,7 @@ import javax.persistence.Id
 @Entity
 data class Item(
 
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     @Id var id: Int?,
 
     var name: String?,

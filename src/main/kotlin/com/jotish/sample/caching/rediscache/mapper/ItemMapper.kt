@@ -15,4 +15,6 @@ interface ItemMapper {
 
     fun update(@MappingTarget item: Item, itemDto: ItemRequestDto)
 
+    fun convertToDtos(items: List<Item>): List<ItemDto>
+
 }
