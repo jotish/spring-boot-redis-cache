@@ -63,7 +63,7 @@ class ItemService {
         // Assumption is that the order of keys sent is the same order in which
         // mget responds so keys which are not cached will have the values as null
         val cachedItems: MutableList<ItemDto?> = redisUtil.multiGet(cacheKeys)
-
+        log.info("Cached items $cachedItems")
         val nonCachedIds = mutableListOf<Int>()
         cachedItems.forEachIndexed { index, item ->
             if (item == null) {

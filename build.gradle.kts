@@ -27,7 +27,7 @@ dependencies {
     implementation("com.h2database:h2:2.1.212")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.13.3")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     implementation("org.mapstruct:mapstruct-jdk8:1.3.1.Final")
     implementation("org.springframework.boot:spring-boot-starter-validation")

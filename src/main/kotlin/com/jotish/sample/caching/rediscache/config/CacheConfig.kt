@@ -1,8 +1,13 @@
 package com.jotish.sample.caching.rediscache.config
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect
+import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.fasterxml.jackson.annotation.PropertyAccessor
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator
+import com.fasterxml.jackson.databind.jsontype.PolymorphicTypeValidator
+import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import com.github.benmanes.caffeine.cache.Caffeine
 import com.jotish.sample.caching.rediscache.constants.CacheConstants
@@ -36,16 +41,30 @@ class CacheConfig {
         return RedisCacheConfiguration.defaultCacheConfig()
             .disableCachingNullValues()
             .entryTtl(Duration.ofMinutes(60))
+            .serializeKeysWith(SerializationPair.fromSerializer(StringRedisSerializer()))
             .serializeValuesWith(SerializationPair.fromSerializer(GenericJackson2JsonRedisSerializer(om)))
     }
 
+    @Bean()
+    @Primary
+    fun objectMapper(): ObjectMapper {
+        val om = ObjectMapper()
+        om.registerKotlinModule()
+        return om
+    }
 
     @Bean(CacheConstants.CACHE_JSON_OBJECT_MAPPER)
     fun redisJsonObjectMapper(): ObjectMapper {
         val om = ObjectMapper()
         om.registerKotlinModule()
+        om.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
         om.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY)
-        om.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL)
+        om.activateDefaultTyping(
+            LaissezFaireSubTypeValidator.instance,
+            ObjectMapper.DefaultTyping.NON_FINAL,
+            JsonTypeInfo.As.WRAPPER_ARRAY
+        )
+
         return om
     }
 
@@ -60,13 +79,10 @@ class CacheConfig {
     }
 
     @Bean(CacheConstants.CACHE_MANAGER_REDIS)
-    @Cacheable
     fun redisCacheManager(
         lettuceConnectionFactory: LettuceConnectionFactory,
         redisCacheConfiguration: RedisCacheConfiguration
     ): CacheManager? {
-        val template = RedisTemplate<String, ItemDto>()
-        template.setConnectionFactory(lettuceConnectionFactory)
         return RedisCacheManager(
             RedisCacheWriter.lockingRedisCacheWriter(lettuceConnectionFactory),
             redisCacheConfiguration

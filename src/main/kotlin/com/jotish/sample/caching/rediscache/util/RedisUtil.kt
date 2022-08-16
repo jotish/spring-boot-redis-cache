@@ -13,7 +13,7 @@ class RedisUtil<String, V : Any>(private val redisTemplate: RedisTemplate<String
     }
 
     fun multiGet(keys: Collection<String>): MutableList<V?> {
-        log.debug("multiGet $keys")
+        log.info("multiGet $keys")
         return redisTemplate.opsForValue().multiGet(keys) ?: mutableListOf()
     }
 }
