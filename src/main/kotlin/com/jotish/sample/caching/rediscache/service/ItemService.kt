@@ -1,6 +1,5 @@
 package com.jotish.sample.caching.rediscache.service
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.jotish.sample.caching.rediscache.constants.CacheConstants
 import com.jotish.sample.caching.rediscache.data.Item
 import com.jotish.sample.caching.rediscache.dto.ItemDto
@@ -10,10 +9,8 @@ import com.jotish.sample.caching.rediscache.repository.ItemRepository
 import com.jotish.sample.caching.rediscache.util.RedisUtil
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
-import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import javax.persistence.EntityNotFoundException
@@ -31,7 +28,7 @@ class ItemService {
 
     @Autowired
     private lateinit var redisUtil: RedisUtil<String, ItemDto>
-    
+
     companion object {
         private val log = LoggerFactory.getLogger(ItemService::class.java)
     }
@@ -76,9 +73,10 @@ class ItemService {
                 result.add(item)
             }
         }
-        val items = itemRepository.findByIdIn(nonCachedIds)
-        val nonCachedItems = itemMapper.convertToDtos(items)
-        result.addAll(nonCachedItems)
+        if (nonCachedIds.isNotEmpty()) {
+            val items = itemRepository.findByIdIn(nonCachedIds)
+            result.addAll(itemMapper.convertToDtos(items))
+        }
         return result
     }
 }
