@@ -5,16 +5,13 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.fasterxml.jackson.annotation.PropertyAccessor
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator
-import com.fasterxml.jackson.databind.jsontype.PolymorphicTypeValidator
 import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator
-import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.github.benmanes.caffeine.cache.Caffeine
 import com.jotish.sample.caching.rediscache.constants.CacheConstants
 import com.jotish.sample.caching.rediscache.dto.ItemDto
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.cache.CacheManager
-import org.springframework.cache.annotation.Cacheable
 import org.springframework.cache.caffeine.CaffeineCacheManager
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -37,34 +34,39 @@ class CacheConfig {
 
 
     @Bean
-    fun cacheConfiguration(@Qualifier(CacheConstants.CACHE_JSON_OBJECT_MAPPER) om: ObjectMapper): RedisCacheConfiguration {
+    fun cacheConfiguration(
+        @Qualifier(CacheConstants.CACHE_CACHE_SERIALIZER)
+        genericJackson2JsonRedisSerializer: GenericJackson2JsonRedisSerializer
+    ): RedisCacheConfiguration {
         return RedisCacheConfiguration.defaultCacheConfig()
             .disableCachingNullValues()
             .entryTtl(Duration.ofMinutes(60))
             .serializeKeysWith(SerializationPair.fromSerializer(StringRedisSerializer()))
-            .serializeValuesWith(SerializationPair.fromSerializer(GenericJackson2JsonRedisSerializer(om)))
+            .serializeValuesWith(SerializationPair.fromSerializer(genericJackson2JsonRedisSerializer))
     }
 
-    @Bean()
+    @Bean(CacheConstants.CACHE_CACHE_SERIALIZER)
+    fun getGenericJackson2JsonRedisSerializer(@Qualifier(CacheConstants.CACHE_JSON_OBJECT_MAPPER)  objectMapper: ObjectMapper): GenericJackson2JsonRedisSerializer {
+        return GenericJackson2JsonRedisSerializer(objectMapper)
+    }
+
+    @Bean
     @Primary
     fun objectMapper(): ObjectMapper {
-        val om = ObjectMapper()
-        om.registerKotlinModule()
-        return om
+        return jacksonObjectMapper()
     }
 
+
     @Bean(CacheConstants.CACHE_JSON_OBJECT_MAPPER)
-    fun redisJsonObjectMapper(): ObjectMapper {
-        val om = ObjectMapper()
-        om.registerKotlinModule()
-        om.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+    fun cacheObjectMapper(): ObjectMapper {
+        val om = jacksonObjectMapper()
         om.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY)
         om.activateDefaultTyping(
             LaissezFaireSubTypeValidator.instance,
             ObjectMapper.DefaultTyping.NON_FINAL,
-            JsonTypeInfo.As.WRAPPER_ARRAY
+            JsonTypeInfo.As.PROPERTY
         )
-
+        om.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
         return om
     }
 
@@ -90,10 +92,11 @@ class CacheConfig {
     }
 
 
-    @Bean(CacheConstants.REDIS_TEMPLATE_FOR_ITEM)
+    @Bean
     fun redisTemplate(
         lettuceConnectionFactory: LettuceConnectionFactory,
-        @Qualifier(CacheConstants.CACHE_JSON_OBJECT_MAPPER) objectMapper: ObjectMapper
+        @Qualifier(CacheConstants.CACHE_JSON_OBJECT_MAPPER)
+        objectMapper: ObjectMapper
     ): RedisTemplate<String, ItemDto> {
         val template = RedisTemplate<String, ItemDto>()
         template.setConnectionFactory(lettuceConnectionFactory)
